@@ -1,3 +1,5 @@
 stm32flash
 *.o
 parsers/parsers.a
+.idea/
+cmake-build-debug/
