@@ -21,6 +21,8 @@
 #ifndef _H_PORT
 #define _H_PORT
 
+#include "serial.h"
+
 typedef enum {
 	PORT_ERR_OK = 0,
 	PORT_ERR_NODEV,		/* No such device */
@@ -45,6 +47,8 @@ struct port_options {
 	int bus_addr;
 	int rx_frame_max;
 	int tx_frame_max;
+    unsigned port_id; /* network socket port, for example */
+    unsigned endpoint_id; /* further subrouting of data traffic */
 };
 
 /*

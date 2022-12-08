@@ -17,4 +17,5 @@ add_executable(stm32flash
         stm32.c
         binary.c
         hex.c
+        network_posix.c
         )

@@ -47,19 +47,22 @@
 #define VERSION "0.7"
 
 /* device globals */
-stm32_t		*stm		= NULL;
-void		*p_st		= NULL;
-parser_t	*parser		= NULL;
+stm32_t *stm = NULL;
+void *p_st = NULL;
+parser_t *parser = NULL;
 struct port_interface *port = NULL;
 
 /* settings */
+#define DEFAULT_NETWORK_PORT (55151)
+
 struct port_options port_opts = {
-	.device			= NULL,
-	.baudRate		= SERIAL_BAUD_57600,
-	.serial_mode		= "8e1",
-	.bus_addr		= 0,
-	.rx_frame_max		= STM32_MAX_RX_FRAME,
-	.tx_frame_max		= STM32_MAX_TX_FRAME,
+	.device = NULL,
+	.baudRate = 0,
+	.serial_mode = 0,
+	.bus_addr = 0,
+	.rx_frame_max = 0,
+	.tx_frame_max = 0,
+    .port_id = DEFAULT_NETWORK_PORT,
 };
 
 enum actions {
@@ -73,23 +76,23 @@ enum actions {
 	ACT_CRC
 };
 
-enum actions	action		= ACT_NONE;
-int		npages		= 0;
-int             spage           = 0;
-int             no_erase        = 0;
-char		verify		= 0;
-int		retry		= 10;
-char		exec_flag	= 0;
-uint32_t	execute		= 0;
-char		init_flag	= 1;
-int		use_stdinout	= 0;
-char		force_binary	= 0;
-FILE		*diag;
-char		reset_flag	= 0;
-char		*filename;
-char		*gpio_seq	= NULL;
-uint32_t	start_addr	= 0;
-uint32_t	readwrite_len	= 0;
+enum actions action = ACT_NONE;
+int	npages = 0;
+int spage = 0;
+int no_erase = 0;
+char verify	= 0;
+int retry = 10;
+char exec_flag = 0;
+uint32_t execute = 0;
+char init_flag = 1;
+int use_stdinout	= 0;
+char force_binary	= 0;
+FILE *diag;
+char reset_flag	= 0;
+char *filename;
+char *gpio_seq = NULL;
+uint32_t start_addr	= 0;
+uint32_t readwrite_len	= 0;
 
 /* functions */
 int  parse_options(int argc, char *argv[]);
@@ -223,8 +226,8 @@ BOOL CtrlHandler( DWORD fdwCtrlType )
 #else
 void sighandler(int s){
 	fprintf(stderr, "\nCaught signal %d\n",s);
-	if (p_st &&  parser ) parser->close(p_st);
-	if (stm  ) stm32_close  (stm);
+	if (p_st &&  parser) parser->close(p_st);
+	if (stm) stm32_close(stm);
 	if (port) port->close(port);
 	exit(1);
 }
@@ -316,6 +319,7 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+    /* normally port is opened here. we are opening a socket and listening to/transmitting network port */
 	if (port_open(&port_opts, &port) != PORT_ERR_OK) {
 		fprintf(stderr, "Failed to open port: %s\n", port_opts.device);
 		goto close;
@@ -676,10 +680,9 @@ close:
 			ret = gpio_bl_exit(port, gpio_seq) || ret;
 	}
 
-	if (p_st  ) parser->close(p_st);
-	if (stm   ) stm32_close  (stm);
-	if (port)
-		port->close(port);
+	if (p_st) { parser->close(p_st); }
+	if (stm) { stm32_close(stm); }
+	if (port) { port->close(port); }
 
 	fprintf(diag, "\n");
 	return ret;
