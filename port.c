@@ -35,13 +35,16 @@ static struct port_interface *ports[] = {
 	NULL,
 };
 
-port_err_t port_open(struct port_options *ops, struct port_interface **outport)
-{
-	int ret;
-	static struct port_interface **port;
+port_err_t port_open(struct port_options *ops, struct port_interface **outport) {
+    static struct port_interface *port = &port_network;
+    int ret = port->open(port, ops);
+    *outport = port;
+    return ret;
+}
 
+#if 0
 	for (port = ports; *port; port++) {
-		ret = (*port)->open(*port, ops);
+		int ret = (*port)->open(*port, ops);
 		if (ret == PORT_ERR_NODEV)
 			continue;
 		if (ret == PORT_ERR_OK)
@@ -60,3 +63,4 @@ port_err_t port_open(struct port_options *ops, struct port_interface **outport)
 	*outport = *port;
 	return PORT_ERR_OK;
 }
+#endif

@@ -108,11 +108,13 @@ static port_err_t network_posix_read(struct port_interface *port, void *buf, siz
     uint8_t *pos = (uint8_t *) buf;
     while (n_bytes) { /* TODO timeout operation */
         int status = check_socket(xface->socket_dat);
-        if (status) { return PORT_ERR_TIMEDOUT; }
-        n = read(xface->socket_dat, pos, n_bytes);
-        if (n <= 0) { return PORT_ERR_UNKNOWN; }
-        n_bytes -= n;
-        pos += n;
+        if (status < 0) { return PORT_ERR_UNKNOWN; }
+        else if (status) {
+            n = read(xface->socket_dat, pos, n_bytes);
+            if (n <= 0) { return PORT_ERR_UNKNOWN; }
+            n_bytes -= n;
+            pos += n;
+        }
     }
     return PORT_ERR_OK;
 }
@@ -141,8 +143,7 @@ static port_err_t network_posix_gpio(struct port_interface *port, network_gpio_t
     switch (bit) {
         case GPIO_RTS: {
             ssize_t olen = snprintf(obuf, sizeof(obuf), "$RTS,%d*", level);
-            sendto(xface->socket_cmd, obuf, olen, 0, (const struct sockaddr *) &xface->servaddr_cmd,
-                   sizeof(xface->servaddr_cmd));
+            sendto(xface->socket_cmd, obuf, olen, 0, (const struct sockaddr *) &xface->servaddr_cmd, sizeof(xface->servaddr_cmd));
             break;
         }
 
