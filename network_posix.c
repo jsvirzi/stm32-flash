@@ -96,7 +96,7 @@ unsigned int check_socket(int socket_fd)
     FD_ZERO(&rset);
     FD_SET(socket_fd, &rset);
     int status = select(socket_fd + 1, &rset, NULL, NULL, &socket_timeout);
-    if (status <= 0) { return -1; }
+    if (status < 0) { return -1; }
 
     return (FD_ISSET(socket_fd, &rset)) ? 1 : 0;
 }
@@ -125,7 +125,7 @@ static port_err_t network_posix_write(struct port_interface *port, void *buf, si
     const uint8_t *pos = (const uint8_t *) buf;
 
     while (n_bytes) { /* TODO timeout operation */
-        n = sendto(xface->socket_cmd, pos, n_bytes, 0, (const struct sockaddr *) &xface->servaddr_dat, sizeof(xface->servaddr_dat));
+        n = sendto(xface->socket_dat, pos, n_bytes, 0, (const struct sockaddr *) &xface->servaddr_dat, sizeof(xface->servaddr_dat));
         if (n < 1)  { return PORT_ERR_UNKNOWN; }
         n_bytes -= n;
         pos += n;
