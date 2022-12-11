@@ -110,7 +110,12 @@ static port_err_t network_posix_read(struct port_interface *port, void *buf, siz
         int status = check_socket(xface->socket_dat);
         if (status < 0) { return PORT_ERR_UNKNOWN; }
         else if (status) {
-            n = read(xface->socket_dat, pos, n_bytes);
+            socklen_t len = sizeof (xface->servaddr_dat);
+            n = recvfrom(xface->socket_dat, pos, n_bytes, 0, (struct sockaddr *) &xface->servaddr_dat, &len);
+            if (n > 0) {
+                fprintf(stderr, "net-rx %zd bytes rec'd / req = %zu\n", n, n_bytes);
+                for (int i = 0; i < n; ++i) { fprintf(stderr, "net-rx %d-byte = %2.2x\n", i, pos[i]); } /* TODO verbose option */
+            }
             if (n <= 0) { return PORT_ERR_UNKNOWN; }
             n_bytes -= n;
             pos += n;
@@ -128,6 +133,7 @@ static port_err_t network_posix_write(struct port_interface *port, void *buf, si
 
     while (n_bytes) { /* TODO timeout operation */
         n = sendto(xface->socket_dat, pos, n_bytes, 0, (const struct sockaddr *) &xface->servaddr_dat, sizeof(xface->servaddr_dat));
+        for (int i = 0; i < n; ++i) { fprintf(stderr, "net-tx %d-byte = %2.2x\n", i, pos[i]); } /* TODO verbose option */
         if (n < 1)  { return PORT_ERR_UNKNOWN; }
         n_bytes -= n;
         pos += n;
