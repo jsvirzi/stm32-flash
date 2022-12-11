@@ -101,26 +101,45 @@ unsigned int check_socket(int socket_fd)
     return (FD_ISSET(socket_fd, &rset)) ? 1 : 0;
 }
 
+#define RX_DATA_BUFF_LENGTH (4096)
+
+static uint8_t rx_data_buff[RX_DATA_BUFF_LENGTH];
+static unsigned int rx_data_head = 0;
+static unsigned int rx_data_tail = 0;
+static unsigned int rx_data_mask = RX_DATA_BUFF_LENGTH - 1;
+
+static void drain_udp_socket(network_interface_t *xface)
+{
+    int status = check_socket(xface->socket_dat);
+    if (status > 0) {
+        static uint8_t tmp_rx_buff[512];
+        socklen_t len = sizeof (xface->servaddr_dat);
+        ssize_t n = recvfrom(xface->socket_dat, tmp_rx_buff, sizeof (tmp_rx_buff), 0, (struct sockaddr *) &xface->servaddr_dat, &len);
+        for (int i = 0; i < n; ++i) { /* unconditionally wrap rx buffer if not serviced. no checking for wraps */
+            rx_data_buff[rx_data_head] = tmp_rx_buff[i];
+            rx_data_head = (rx_data_head + 1) & rx_data_mask;
+        }
+    }
+}
+
 static port_err_t network_posix_read(struct port_interface *port, void *buf, size_t n_bytes)
 {
     network_interface_t *xface = (network_interface_t *) port->private;
-    ssize_t n;
-    uint8_t *pos = (uint8_t *) buf;
-    while (n_bytes) { /* TODO timeout operation */
-        int status = check_socket(xface->socket_dat);
-        if (status < 0) { return PORT_ERR_UNKNOWN; }
-        else if (status) {
-            socklen_t len = sizeof (xface->servaddr_dat);
-            n = recvfrom(xface->socket_dat, pos, n_bytes, 0, (struct sockaddr *) &xface->servaddr_dat, &len);
-            if (n > 0) {
-                fprintf(stderr, "net-rx %zd bytes rec'd / req = %zu\n", n, n_bytes);
-                for (int i = 0; i < n; ++i) { fprintf(stderr, "net-rx %d-byte = %2.2x\n", i, pos[i]); } /* TODO verbose option */
+    uint8_t *data = (uint8_t *) buf;
+    ssize_t index = 0;
+    while (index < n_bytes) { /* TODO timeout operation */
+        drain_udp_socket(port->private);
+        while (rx_data_tail != rx_data_head) {
+            uint8_t byte = rx_data_buff[rx_data_tail];
+            data[index++] = byte;
+            fprintf(stderr, "net-rx %d/%d-byte = %2.2x\n", index, n_bytes, byte);
+            rx_data_tail = (rx_data_tail + 1) & rx_data_mask;
+            if (index == n_bytes) {
+                break;
             }
-            if (n <= 0) { return PORT_ERR_UNKNOWN; }
-            n_bytes -= n;
-            pos += n;
         }
     }
+
     return PORT_ERR_OK;
 }
 
