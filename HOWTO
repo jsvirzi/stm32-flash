@@ -78,6 +78,11 @@ GPIO sequence:
 	  '-' reset signal (low) instead of setting it (high)
 
 Examples:
+
+    /* boot0 high, toggle reset before programming. after programming, boot0 low and toggle reset again */
+    -w ../sample.hex -i dtr&-rts,rts:-dtr&-rts,rts 55151
+    -w ../sample.hex 55151
+
 	Get device information:
 		/Users/jsvirzi/Documents/projects/hayden/stm32flash/cmake-build-debug/stm32flash /dev/ttyS0
 	  or:

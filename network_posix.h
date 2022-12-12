@@ -7,6 +7,9 @@
 #include "port.h"
 
 typedef struct {
+    int verbose;
+    int debug;
+    int timeout;
     int socket_dat;
     int socket_cmd;
     struct sockaddr_in servaddr_dat;

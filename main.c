@@ -90,7 +90,8 @@ char force_binary	= 0;
 FILE *diag;
 char reset_flag	= 0;
 char *filename;
-char *gpio_seq = NULL;
+#define DEFAULT_INIT_SEQUENCE "dtr,,,,,-rts,rts:-dtr,,,,,-rts,rts"
+char *gpio_seq = DEFAULT_INIT_SEQUENCE;
 uint32_t start_addr	= 0;
 uint32_t readwrite_len	= 0;
 

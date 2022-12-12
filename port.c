@@ -23,17 +23,19 @@
 #include "serial.h"
 #include "port.h"
 
-
 extern struct port_interface port_serial;
 extern struct port_interface port_i2c;
 extern struct port_interface port_network;
 
+#if 0
+/* used when probing for different available interfaces. here, we focus on udp */
 static struct port_interface *ports[] = {
 	&port_serial,
 	&port_i2c,
     &port_network,
 	NULL,
 };
+#endif
 
 port_err_t port_open(struct port_options *ops, struct port_interface **outport) {
     static struct port_interface *port = &port_network;

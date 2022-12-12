@@ -124,15 +124,14 @@ static void drain_udp_socket(network_interface_t *xface)
 
 static port_err_t network_posix_read(struct port_interface *port, void *buf, size_t n_bytes)
 {
-    network_interface_t *xface = (network_interface_t *) port->private;
     uint8_t *data = (uint8_t *) buf;
-    ssize_t index = 0;
+    size_t index = 0;
     while (index < n_bytes) { /* TODO timeout operation */
         drain_udp_socket(port->private);
         while (rx_data_tail != rx_data_head) {
             uint8_t byte = rx_data_buff[rx_data_tail];
             data[index++] = byte;
-            fprintf(stderr, "net-rx %d/%d-byte = %2.2x\n", index, n_bytes, byte);
+            fprintf(stderr, "net-rx %ld/%ld-byte = %2.2x\n", index, n_bytes, byte);
             rx_data_tail = (rx_data_tail + 1) & rx_data_mask;
             if (index == n_bytes) {
                 break;
@@ -152,7 +151,11 @@ static port_err_t network_posix_write(struct port_interface *port, void *buf, si
 
     while (n_bytes) { /* TODO timeout operation */
         n = sendto(xface->socket_dat, pos, n_bytes, 0, (const struct sockaddr *) &xface->servaddr_dat, sizeof(xface->servaddr_dat));
-        for (int i = 0; i < n; ++i) { fprintf(stderr, "net-tx %d-byte = %2.2x\n", i, pos[i]); } /* TODO verbose option */
+        if (xface->verbose) {
+            int max = n;
+            if (xface->debug == 0) { max = (max <= 16) ? max : 16; } /* potentially a torrent of data only if debug */
+            for (int i = 0; i < max; ++i) { fprintf(stderr, "net-tx %d-byte = %2.2x\n", i, pos[i]); }
+        }
         if (n < 1)  { return PORT_ERR_UNKNOWN; }
         n_bytes -= n;
         pos += n;
